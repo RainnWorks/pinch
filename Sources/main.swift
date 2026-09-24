@@ -48,10 +48,6 @@ func sendMusic(_ command: String, to app: String) -> String? {
     return error?[NSAppleScript.errorMessage] as? String
 }
 
-func airpodsImage(pointSize: CGFloat) -> NSImage? {
-    let config = NSImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
-    return NSImage(systemSymbolName: "airpods", accessibilityDescription: "Pinch")?.withSymbolConfiguration(config)
-}
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = BindingStore()
@@ -178,7 +174,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateStatusIcon() {
         let image = isTrusted
-            ? airpodsImage(pointSize: 15)
+            ? NSImage(named: "menubar")
             : NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Pinch needs Accessibility")
         image?.isTemplate = true
         statusItem.button?.image = image
