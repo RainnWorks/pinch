@@ -59,12 +59,17 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 
-SIGN="codesign --force --sign $IDENTITY"
-[ "$IDENTITY" = "-" ] || SIGN="$SIGN --options runtime --timestamp"
+sign() {
+  if [ "$IDENTITY" = "-" ]; then
+    codesign --force --sign - "$@"
+  else
+    codesign --force --sign "$IDENTITY" --options runtime --timestamp "$@"
+  fi
+}
 # Sparkle's helpers must be signed before the framework, and the framework before the app.
 SPARKLE_B="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
-$SIGN "$SPARKLE_B/Autoupdate"
-$SIGN "$SPARKLE_B/Updater.app"
-$SIGN "$APP/Contents/Frameworks/Sparkle.framework"
-$SIGN --entitlements Pinch.entitlements "$APP"
+sign "$SPARKLE_B/Autoupdate"
+sign "$SPARKLE_B/Updater.app"
+sign "$APP/Contents/Frameworks/Sparkle.framework"
+sign --entitlements Pinch.entitlements "$APP"
 echo "Built $APP $VERSION"
