@@ -13,7 +13,8 @@
 With Homebrew:
 
 ```sh
-brew install --cask rainnworks/tap/pinch
+brew tap rainnworks/tap && brew trust rainnworks/tap
+brew install --cask pinch
 ```
 
 Or download the latest `Pinch-x.y.z.dmg` from [Releases](https://github.com/RainnWorks/pinch/releases), open it and drag Pinch to Applications. Then:
