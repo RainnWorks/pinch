@@ -15,6 +15,8 @@ Open settings from the Dock icon, the menu bar icon, or ⌘,.
 
 ## How it works
 
+![AirPods stem presses flow through macOS now playing to Pinch, then to a keyboard shortcut or Spotify / Music](assets/how-it-works.png)
+
 macOS sends AirPods presses to whichever app is "now playing", not to the
 keyboard, so key remappers such as Karabiner never see them. Pinch plays a
 silent loop to hold that slot and receives the presses itself. A press set to
