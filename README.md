@@ -10,9 +10,16 @@
 
 ## Install
 
-1. Download the latest `Pinch-x.y.z.zip` from [Releases](https://github.com/RainnWorks/pinch/releases) and unzip it.
-2. Move `Pinch.app` to Applications and open it.
-3. macOS asks you to allow Pinch under **Privacy & Security → Accessibility**. Turn it on, then quit Pinch and open it again. Pinch needs this to send key presses.
+With Homebrew:
+
+```sh
+brew install --cask rainnworks/tap/pinch
+```
+
+Or download the latest `Pinch-x.y.z.dmg` from [Releases](https://github.com/RainnWorks/pinch/releases), open it and drag Pinch to Applications. Then:
+
+1. Open Pinch.
+2. macOS asks you to allow Pinch under **Privacy & Security → Accessibility**. Turn it on, then quit Pinch and open it again. Pinch needs this to send key presses.
 
 Pinch needs macOS 14 or later.
 
@@ -66,7 +73,13 @@ Set the new version in `VERSION`, commit, then push a matching tag:
 git tag v$(cat VERSION) && git push origin v$(cat VERSION)
 ```
 
-GitHub Actions builds Pinch, signs it with the RainnWorks Developer ID, has Apple
-notarize it and publishes the zip on Releases. Signing goes through
-[`RainnWorks/apple-signing`](https://github.com/RainnWorks/apple-signing).
-`./release.sh` does the same on a Mac.
+GitHub Actions then:
+
+1. builds Pinch and signs it with the RainnWorks Developer ID, through
+   [`RainnWorks/apple-signing`](https://github.com/RainnWorks/apple-signing),
+2. packs it in a DMG and has Apple notarize it,
+3. publishes the DMG and a Sparkle `appcast.xml` on Releases,
+4. updates the cask in [`RainnWorks/homebrew-tap`](https://github.com/RainnWorks/homebrew-tap).
+
+Pinch checks that appcast and offers the update itself (Sparkle), so Homebrew
+installs are marked `auto_updates` and leave updating to Pinch.

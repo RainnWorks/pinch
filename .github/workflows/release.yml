@@ -10,6 +10,8 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
+    env:
+      IDENTITY: "Developer ID Application: RainnWorks (53W966FBFP)"
     steps:
       - uses: actions/checkout@v4
       - name: Check out apple-signing
@@ -19,7 +21,13 @@ jobs:
           ssh-key: ${{ secrets.RW_SIGNING_DEPLOY_KEY }}
           path: .apple-signing
       - uses: oven-sh/setup-bun@v2
-      - name: Build, sign and notarize
+
+      - name: Check the tag matches VERSION
+        run: |
+          echo "VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
+          test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "VERSION does not match tag $GITHUB_REF_NAME"; exit 1; }
+
+      - name: Build, sign and notarize the DMG
         env:
           RW_SIGNING_ROOT: .apple-signing
           RW_SIGNING_PASSWORD: ${{ secrets.RW_SIGNING_PASSWORD }}
@@ -27,12 +35,57 @@ jobs:
           RW_ASC_ISSUER_ID: ${{ secrets.RW_ASC_ISSUER_ID }}
           RW_ASC_KEY_P8: ${{ secrets.RW_ASC_KEY_P8 }}
         run: |
-          test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "VERSION does not match tag $GITHUB_REF_NAME"; exit 1; }
           bun .apple-signing/src/cli.ts sync pinch --ci
-          IDENTITY="Developer ID Application: RainnWorks (53W966FBFP)" ./build.sh
-          bun .apple-signing/src/cli.ts notarize Pinch.app
-          ditto -c -k --keepParent Pinch.app "Pinch-$(cat VERSION).zip"
-      - name: Publish
+          ./build.sh
+          mkdir dmg
+          ditto Pinch.app dmg/Pinch.app
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname Pinch -srcfolder dmg -ov -format UDZO "Pinch-$VERSION.dmg"
+          codesign --sign "$IDENTITY" --timestamp "Pinch-$VERSION.dmg"
+          bun .apple-signing/src/cli.ts notarize "Pinch-$VERSION.dmg"
+
+      - name: Write the Sparkle appcast
+        env:
+          SPARKLE_KEY: ${{ secrets.RW_SPARKLE_PRIVATE_KEY }}
+        run: |
+          key="$RUNNER_TEMP/sparkle.key"
+          printf '%s' "$SPARKLE_KEY" > "$key"
+          signature="$(.build/sparkle-*/bin/sign_update --ed-key-file "$key" "Pinch-$VERSION.dmg")"
+          rm -f "$key"
+          cat > appcast.xml <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Pinch</title>
+              <item>
+                <title>Pinch $VERSION</title>
+                <pubDate>$(date -u "+%a, %d %b %Y %H:%M:%S +0000")</pubDate>
+                <link>https://github.com/RainnWorks/pinch/releases/tag/v$VERSION</link>
+                <sparkle:version>$VERSION</sparkle:version>
+                <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+                <enclosure url="https://github.com/RainnWorks/pinch/releases/download/v$VERSION/Pinch-$VERSION.dmg" type="application/octet-stream" $signature />
+              </item>
+            </channel>
+          </rss>
+          XML
+
+      - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "Pinch-$(cat VERSION).zip" --title "Pinch $(cat VERSION)" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" "Pinch-$VERSION.dmg" appcast.xml --title "Pinch $VERSION" --generate-notes
+
+      - name: Check out the tap
+        uses: actions/checkout@v4
+        with:
+          repository: RainnWorks/homebrew-tap
+          ssh-key: ${{ secrets.RW_TAP_DEPLOY_KEY }}
+          path: .tap
+      - name: Update the Homebrew cask
+        working-directory: .tap
+        run: |
+          scripts/bump.sh Casks/pinch.rb "$VERSION" "$(shasum -a 256 "../Pinch-$VERSION.dmg" | cut -d' ' -f1)"
+          git config user.name "RainnWorks release"
+          git config user.email "releases@rainn.works"
+          git commit -am "pinch $VERSION"
+          git push

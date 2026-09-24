@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import MediaPlayer
+import Sparkle
 import SwiftUI
 
 let reclaimDelay: TimeInterval = 1.0
@@ -55,6 +56,7 @@ func airpodsImage(pointSize: CGFloat) -> NSImage? {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = BindingStore()
     private let claim = NowPlayingClaim()
+    private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var settingsWindow: NSWindow?
     private var events: [String] = []
@@ -138,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.addItem(.separator())
         menu.addItem(item("Settings…", #selector(showSettings), ","))
+        menu.addItem(checkForUpdatesItem())
         menu.addItem(item("Reclaim now playing", #selector(reclaimNow), "r"))
         menu.addItem(NSMenuItem(title: "Quit Pinch", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -146,6 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func mainMenu() -> NSMenu {
         let appMenu = NSMenu()
         appMenu.addItem(item("Settings…", #selector(showSettings), ","))
+        appMenu.addItem(checkForUpdatesItem())
         appMenu.addItem(.separator())
         appMenu.addItem(NSMenuItem(title: "Quit Pinch", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         let appItem = NSMenuItem()
@@ -153,6 +157,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let main = NSMenu()
         main.addItem(appItem)
         return main
+    }
+
+    private func checkForUpdatesItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Check for Updates…", action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "")
+        item.target = updater
+        return item
     }
 
     private func item(_ title: String, _ action: Selector, _ key: String) -> NSMenuItem {
