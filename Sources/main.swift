@@ -61,15 +61,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     private var events: [String] = []
     private var lastSinglePress = Date.distantPast
+    private var isTrusted = false
+    private var accessibilityTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = mainMenu()
-        let image = airpodsImage(pointSize: 15)
-        image?.isTemplate = true
-        statusItem.button?.image = image
 
-        let trusted = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
-        log(trusted ? "Accessibility granted" : "Accessibility missing: grant it, then relaunch")
+        isTrusted = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+        updateStatusIcon()
+        log(isTrusted ? "Accessibility allowed" : "Accessibility missing: shortcuts will not work")
+        accessibilityTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            self?.checkAccessibility()
+        }
 
         let commands = MPRemoteCommandCenter.shared()
         for command in [commands.togglePlayPauseCommand, commands.playCommand, commands.pauseCommand] {
@@ -103,6 +106,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .nothing:
             log("\(press.rawValue) → nothing")
         case .shortcut(let shortcut):
+            guard isTrusted else {
+                log("\(press.rawValue) → \(shortcut.display) blocked: allow Accessibility")
+                return
+            }
             shortcut.post()
             log("\(press.rawValue) → \(shortcut.display)")
         case .music:
@@ -125,6 +132,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func checkAccessibility() {
+        let trusted = AXIsProcessTrusted()
+        guard trusted != isTrusted else { return }
+        isTrusted = trusted
+        if trusted {
+            log("Accessibility allowed: restarting Pinch")
+            relaunch()
+        } else {
+            log("Accessibility removed: shortcuts will not work")
+            updateStatusIcon()
+        }
+    }
+
+    private func relaunch() {
+        let reopen = Process()
+        reopen.executableURL = URL(fileURLWithPath: "/bin/sh")
+        reopen.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        try? reopen.run()
+        NSApp.terminate(nil)
+    }
+
+    private func updateStatusIcon() {
+        let image = isTrusted
+            ? airpodsImage(pointSize: 15)
+            : NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Pinch needs Accessibility")
+        image?.isTemplate = true
+        statusItem.button?.image = image
+    }
+
+    @objc private func openAccessibilitySettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        NSWorkspace.shared.open(url)
+    }
+
     private func log(_ message: String) {
         let time = Date().formatted(date: .omitted, time: .standard)
         events.insert("\(time)  \(message)", at: 0)
@@ -135,6 +176,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildStatusMenu() {
         let menu = NSMenu()
+        if !isTrusted {
+            let warning = NSMenuItem(title: "Pinch needs Accessibility to send shortcuts", action: nil, keyEquivalent: "")
+            warning.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: nil)
+            menu.addItem(warning)
+            menu.addItem(item("Open Accessibility Settings…", #selector(openAccessibilitySettings), ""))
+            menu.addItem(NSMenuItem(title: "If Pinch is listed but not working, remove it with − and add it again", action: nil, keyEquivalent: ""))
+            menu.addItem(.separator())
+        }
         for event in events {
             menu.addItem(NSMenuItem(title: event, action: nil, keyEquivalent: ""))
         }
