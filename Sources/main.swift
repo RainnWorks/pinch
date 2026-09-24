@@ -205,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateStatusIcon() {
         let image = isTrusted
-            ? NSImage(named: "menubar")
+            ? MenuBarIcon.make()
             : NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Pinch needs Accessibility")
         image?.isTemplate = true
         statusItem.button?.image = image
