@@ -8,25 +8,26 @@
 
 ![A wireframe AirPods Pro with one, two and three presses mapped to Play / Pause, Option Space and Previous track](assets/hero.png)
 
-## Install
+## Getting started
 
-With Homebrew:
+1. **Install Pinch.** With Homebrew:
 
-```sh
-brew tap rainnworks/tap && brew trust rainnworks/tap
-brew install --cask pinch
-```
+   ```sh
+   brew tap rainnworks/tap && brew trust rainnworks/tap
+   brew install --cask pinch
+   ```
 
-Or download the latest `Pinch-x.y.z.dmg` from [Releases](https://github.com/RainnWorks/pinch/releases), open it and drag Pinch to Applications. Then:
+   Or download the latest `Pinch-x.y.z.dmg` from [Releases](https://github.com/RainnWorks/pinch/releases), open it and drag Pinch to Applications.
+2. **Open Pinch.** It appears in the menu bar and the Dock.
+3. **Allow Accessibility.** Pinch needs it to send key presses. macOS asks on the first launch. If you miss it, the menu bar icon shows a warning triangle: choose **Open Accessibility Settings…** from its menu and turn Pinch on. Pinch restarts itself when the permission arrives.
+4. **Double press a stem.** Pinch sends ⌥ Space. To change what each press does, open **Settings** with ⌘,.
+5. **Optional:** turn on **Open at login** in Settings.
 
-1. Open Pinch.
-2. macOS asks you to allow Pinch under **Privacy & Security → Accessibility**. Turn it on, then quit Pinch and open it again. Pinch needs this to send key presses.
-
-Pinch needs macOS 14 or later.
+Pinch needs macOS 14 or later. It checks for updates by itself, or choose **Check for Updates…** from its menu.
 
 ## Use
 
-Pinch sits in the menu bar and the Dock. Open **Settings** from either one, or press ⌘,. Turn on **Open at login** there to start Pinch with your Mac.
+Open **Settings** from the menu bar icon, the Dock icon, or ⌘,.
 
 Pick an action for each press:
 
