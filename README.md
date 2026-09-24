@@ -54,7 +54,7 @@ The menu shows whether the command finished or failed, with its first error line
 
 **Music** passes the press on to Spotify, or to Music if Spotify is not open. The first time, macOS asks you to allow Pinch to control that app.
 
-The menu bar menu lists the last 15 presses and what Pinch did with each one.
+The menu bar menu lists the last 5 presses and what Pinch did with each one.
 
 ## How it works
 

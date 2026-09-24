@@ -219,7 +219,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func log(_ message: String) {
         let time = Date().formatted(date: .omitted, time: .standard)
         events.insert("\(time)  \(message)", at: 0)
-        events = Array(events.prefix(15))
+        events = Array(events.prefix(5))
         NSLog("Pinch: \(message)")
         rebuildStatusMenu()
     }
