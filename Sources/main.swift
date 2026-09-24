@@ -52,19 +52,6 @@ func airpodsImage(pointSize: CGFloat) -> NSImage? {
     return NSImage(systemSymbolName: "airpods", accessibilityDescription: "Pinch")?.withSymbolConfiguration(config)
 }
 
-func dockIcon() -> NSImage {
-    let size = NSSize(width: 512, height: 512)
-    return NSImage(size: size, flipped: false) { rect in
-        NSColor.systemIndigo.setFill()
-        NSBezierPath(roundedRect: rect.insetBy(dx: 50, dy: 50), xRadius: 90, yRadius: 90).fill()
-        if let symbol = airpodsImage(pointSize: 240)?.withSymbolConfiguration(.init(paletteColors: [.white])) {
-            let origin = NSPoint(x: rect.midX - symbol.size.width / 2, y: rect.midY - symbol.size.height / 2)
-            symbol.draw(in: NSRect(origin: origin, size: symbol.size))
-        }
-        return true
-    }
-}
-
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = BindingStore()
     private let claim = NowPlayingClaim()
@@ -74,7 +61,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastSinglePress = Date.distantPast
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.applicationIconImage = dockIcon()
         NSApp.mainMenu = mainMenu()
         let image = airpodsImage(pointSize: 15)
         image?.isTemplate = true
