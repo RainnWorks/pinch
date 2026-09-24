@@ -18,7 +18,7 @@ Pinch needs macOS 14 or later.
 
 ## Use
 
-Pinch sits in the menu bar and the Dock. Open **Settings** from either one, or press ⌘,.
+Pinch sits in the menu bar and the Dock. Open **Settings** from either one, or press ⌘,. Turn on **Open at login** there to start Pinch with your Mac.
 
 Pick an action for each press:
 
@@ -58,10 +58,15 @@ open Pinch.app
 
 This makes an ad-hoc signed build. macOS treats each rebuild as a new app, so you must allow Accessibility again after each one.
 
-A signed and notarized release uses RainnWorks signing through
-[`rw-apple`](https://github.com/RainnWorks/apple-signing):
+## Release
+
+Set the new version in `VERSION`, commit, then push a matching tag:
 
 ```sh
-./release.sh
-gh release create v$(cat VERSION) dist/Pinch-$(cat VERSION).zip
+git tag v$(cat VERSION) && git push origin v$(cat VERSION)
 ```
+
+GitHub Actions builds Pinch, signs it with the RainnWorks Developer ID, has Apple
+notarize it and publishes the zip on Releases. Signing goes through
+[`RainnWorks/apple-signing`](https://github.com/RainnWorks/apple-signing).
+`./release.sh` does the same on a Mac.

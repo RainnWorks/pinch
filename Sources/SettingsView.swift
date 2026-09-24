@@ -1,10 +1,22 @@
+import ServiceManagement
 import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var store: BindingStore
+    @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Open at login", isOn: $opensAtLogin)
+                    .onChange(of: opensAtLogin) { _, enabled in
+                        do {
+                            enabled ? try SMAppService.mainApp.register() : try SMAppService.mainApp.unregister()
+                        } catch {
+                            opensAtLogin = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+            }
             ForEach(Press.allCases) { press in
                 PressRow(press: press, action: Binding(
                     get: { store.action(for: press) },

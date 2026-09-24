@@ -1,0 +1,38 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out apple-signing
+        uses: actions/checkout@v4
+        with:
+          repository: RainnWorks/apple-signing
+          ssh-key: ${{ secrets.RW_SIGNING_DEPLOY_KEY }}
+          path: .apple-signing
+      - uses: oven-sh/setup-bun@v2
+      - name: Build, sign and notarize
+        env:
+          RW_SIGNING_ROOT: .apple-signing
+          RW_SIGNING_PASSWORD: ${{ secrets.RW_SIGNING_PASSWORD }}
+          RW_ASC_KEY_ID: ${{ secrets.RW_ASC_KEY_ID }}
+          RW_ASC_ISSUER_ID: ${{ secrets.RW_ASC_ISSUER_ID }}
+          RW_ASC_KEY_P8: ${{ secrets.RW_ASC_KEY_P8 }}
+        run: |
+          test "v$(cat VERSION)" = "$GITHUB_REF_NAME" || { echo "VERSION does not match tag $GITHUB_REF_NAME"; exit 1; }
+          bun .apple-signing/src/cli.ts sync pinch --ci
+          IDENTITY="Developer ID Application: RainnWorks (53W966FBFP)" ./build.sh
+          bun .apple-signing/src/cli.ts notarize Pinch.app
+          ditto -c -k --keepParent Pinch.app "Pinch-$(cat VERSION).zip"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "Pinch-$(cat VERSION).zip" --title "Pinch $(cat VERSION)" --generate-notes
