@@ -4,6 +4,7 @@ from PIL import Image, ImageFilter
 from io import BytesIO
 import base64
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parent
 original = Image.open(ROOT / 'earbud-generated.png').convert('L')
@@ -63,14 +64,11 @@ flow += text(1362, 212, 'Keyboard shortcut', 28, 'middle')
 flow += '<rect x="1210" y="353" width="305" height="94" rx="12" fill="none" stroke="white" stroke-width="2.5"/>'
 flow += text(1362, 412, 'Spotify / Music', 30, 'middle')
 
-# The 824px black tile leaves the standard 100px optical margin at 1024px.
-shape = 'M285 100 H739 C865 100 924 159 924 285 V739 C924 865 865 924 739 924 H285 C159 924 100 865 100 739 V285 C100 159 159 100 285 100 Z'
-icon = f'<defs><clipPath id="tile"><path d="{shape}"/></clipPath></defs><path d="{shape}" fill="black"/>'
-icon += '<g clip-path="url(#tile)">' + earbud(265, 185, 494, 654, True) + '</g>'
-
-for name, svg in [('hero', document(1600, 900, hero)), ('how-it-works', document(1600, 600, flow)), ('icon-1024', document(1024, 1024, icon, False))]:
+# README artwork keeps the original generated drawing. Icons have their own
+# vector-only source and renderer so they can be rebuilt independently.
+for name, svg in [('hero', document(1600, 900, hero)), ('how-it-works', document(1600, 600, flow))]:
     source = ROOT / f'{name}.svg'
     source.write_text(svg)
     subprocess.run(['rsvg-convert', str(source), '-o', str(ROOT.parent / f'{name}.png')], check=True)
 
-Image.open(ROOT.parent / 'icon-1024.png').resize((32, 32), Image.Resampling.LANCZOS).save(ROOT / 'icon-preview-32.png')
+subprocess.run([sys.executable, str(ROOT / 'render-icons.py')], check=True)
