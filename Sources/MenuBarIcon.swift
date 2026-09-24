@@ -1,12 +1,14 @@
 import AppKit
 
 enum MenuBarIcon {
-    private static let size = NSSize(width: 18, height: 18)
-    private static let pointSize: CGFloat = 14
+    private static let size = NSSize(width: 16, height: 20)
+    private static let pointSize: CGFloat = 19
     private static let tilt: CGFloat = 20
-    private static let arcGap: CGFloat = 2.2
+    private static let arcGap: CGFloat = 3
+    // Moves the tilted drawing so its visible outline sits in the middle of the box.
+    private static let centering = CGPoint(x: -0.7, y: -1.6)
     private static let arcLength: CGFloat = 0.26
-    private static let lineWidth: CGFloat = 1
+    private static let lineWidth: CGFloat = 1.3
 
     // Where the stem sits inside the airpodpro.right symbol, measured from its
     // rendered pixels on macOS 26. Remeasure if Apple redraws the symbol.
@@ -37,7 +39,7 @@ enum MenuBarIcon {
 
         let symbolSize = NSSize(width: symbol.size.width / oversample, height: symbol.size.height / oversample)
         let origin = NSPoint(x: -symbolSize.width / 2, y: -symbolSize.height / 2)
-        context.translateBy(x: size.width / 2, y: size.height / 2)
+        context.translateBy(x: size.width / 2 + centering.x, y: size.height / 2 + centering.y)
         context.rotate(by: tilt * .pi / 180)
 
         context.saveGState()
