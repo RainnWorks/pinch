@@ -65,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var accessibilityTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if leaveTranslocation() { return }
         NSApp.mainMenu = mainMenu()
 
         isTrusted = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
@@ -145,12 +146,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func relaunch() {
+    private func relaunch(from path: String = Bundle.main.bundlePath) {
         let reopen = Process()
         reopen.executableURL = URL(fileURLWithPath: "/bin/sh")
-        reopen.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        reopen.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
         try? reopen.run()
         NSApp.terminate(nil)
+    }
+
+    // macOS runs a quarantined app that Finder did not move from a read-only copy,
+    // and Sparkle cannot update that copy. Homebrew installs land in this state.
+    private func leaveTranslocation() -> Bool {
+        let bundle = Bundle.main.bundleURL
+        guard bundle.path.contains("/AppTranslocation/"), let original = originalLocation(of: bundle) else { return false }
+        let clear = Process()
+        clear.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+        clear.arguments = ["-dr", "com.apple.quarantine", original.path]
+        try? clear.run()
+        clear.waitUntilExit()
+        relaunch(from: original.path)
+        return true
+    }
+
+    private func originalLocation(of url: URL) -> URL? {
+        typealias CreateOriginalPath = @convention(c) (CFURL, UnsafeMutablePointer<Unmanaged<CFError>?>?) -> Unmanaged<CFURL>?
+        guard let security = dlopen("/System/Library/Frameworks/Security.framework/Security", RTLD_LAZY),
+              let symbol = dlsym(security, "SecTranslocateCreateOriginalPathForURL") else { return nil }
+        let create = unsafeBitCast(symbol, to: CreateOriginalPath.self)
+        return create(url as CFURL, nil)?.takeRetainedValue() as URL?
     }
 
     private func updateStatusIcon() {
