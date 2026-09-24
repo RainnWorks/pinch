@@ -87,6 +87,7 @@ struct Shortcut: Codable, Equatable {
 enum PressAction: Codable, Equatable {
     case music
     case shortcut(Shortcut)
+    case command(String)
     case nothing
 }
 

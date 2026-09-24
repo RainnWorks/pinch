@@ -23,7 +23,7 @@ struct SettingsView: View {
                     set: { store.actions[press] = $0 }
                 ))
             }
-            Text("\"Music\" passes the press on to Spotify or Music as normal.")
+            Text("\"Music\" passes the press on to Spotify or Music as normal. \"Command\" runs a shell command with zsh.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -36,6 +36,7 @@ struct SettingsView: View {
 private enum ActionKind: String, CaseIterable {
     case music = "Music"
     case shortcut = "Shortcut"
+    case command = "Command"
     case nothing = "Nothing"
 }
 
@@ -49,6 +50,7 @@ private struct PressRow: View {
                 switch action {
                 case .music: .music
                 case .shortcut: .shortcut
+                case .command: .command
                 case .nothing: .nothing
                 }
             },
@@ -59,18 +61,35 @@ private struct PressRow: View {
                 case .shortcut:
                     if case .shortcut = action { return }
                     action = .shortcut(.optionSpace)
+                case .command:
+                    if case .command = action { return }
+                    action = .command("")
                 }
             }
         )
     }
 
+    private var command: Binding<String> {
+        Binding(
+            get: { if case .command(let text) = action { text } else { "" } },
+            set: { action = .command($0) }
+        )
+    }
+
     var body: some View {
-        HStack {
-            Picker(press.label, selection: kind) {
-                ForEach(ActionKind.allCases, id: \.self) { Text($0.rawValue) }
+        VStack(alignment: .leading) {
+            HStack {
+                Picker(press.label, selection: kind) {
+                    ForEach(ActionKind.allCases, id: \.self) { Text($0.rawValue) }
+                }
+                if case .shortcut(let shortcut) = action {
+                    ShortcutRecorder(shortcut: shortcut) { action = .shortcut($0) }
+                }
             }
-            if case .shortcut(let shortcut) = action {
-                ShortcutRecorder(shortcut: shortcut) { action = .shortcut($0) }
+            if case .command = action {
+                TextField("Command", text: command, prompt: Text("osascript -e 'display notification \"Pinch\"'"))
+                    .font(.system(.body, design: .monospaced))
+                    .labelsHidden()
             }
         }
     }

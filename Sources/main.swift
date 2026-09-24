@@ -109,8 +109,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             shortcut.post()
             log("\(press.rawValue) → \(shortcut.display)")
+        case .command(let command):
+            runCommand(command, for: press)
         case .music:
             forwardToMusic(press)
+        }
+    }
+
+    private func runCommand(_ command: String, for press: Press) {
+        guard !command.trimmingCharacters(in: .whitespaces).isEmpty else {
+            log("\(press.rawValue) → no command set")
+            return
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-c", command]
+        var environment = ProcessInfo.processInfo.environment
+        environment["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + (environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin")
+        process.environment = environment
+        process.standardOutput = FileHandle.nullDevice
+        let errors = Pipe()
+        process.standardError = errors
+        process.terminationHandler = { [weak self] finished in
+            let firstError = String(decoding: errors.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+                .split(separator: "\n").first.map(String.init) ?? ""
+            let status = finished.terminationStatus
+            DispatchQueue.main.async {
+                self?.log(status == 0 ? "\(press.rawValue) → command done" : "\(press.rawValue) → command failed (\(status)) \(firstError)")
+            }
+        }
+        do {
+            try process.run()
+        } catch {
+            log("\(press.rawValue) → command could not start: \(error.localizedDescription)")
         }
     }
 

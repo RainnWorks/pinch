@@ -33,11 +33,24 @@ Pick an action for each press:
 
 | Press | Default | Options |
 |---|---|---|
-| Single | Play / Pause | Music, a shortcut, or nothing |
-| Double | ⌥ Space | Music, a shortcut, or nothing |
-| Triple | Previous track | Music, a shortcut, or nothing |
+| Single | Play / Pause | Music, a shortcut, a command, or nothing |
+| Double | ⌥ Space | Music, a shortcut, a command, or nothing |
+| Triple | Previous track | Music, a shortcut, a command, or nothing |
 
 To set a shortcut, choose **Shortcut**, click the button, then type the keys. Esc cancels.
+
+To run a command, choose **Command** and type it. Pinch runs it with `zsh -c`, with
+Homebrew's folders on the `PATH`. Commands do not need the Accessibility permission.
+For example:
+
+```sh
+osascript -e 'tell application "Music" to playpause'
+shortcuts run "Start Focus"
+open -a Raycast
+~/bin/toggle-mic.sh
+```
+
+The menu shows whether the command finished or failed, with its first error line.
 
 **Music** passes the press on to Spotify, or to Music if Spotify is not open. The first time, macOS asks you to allow Pinch to control that app.
 
