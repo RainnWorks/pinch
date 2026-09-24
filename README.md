@@ -58,11 +58,10 @@ open Pinch.app
 
 This makes an ad-hoc signed build. macOS treats each rebuild as a new app, so you must allow Accessibility again after each one.
 
-A signed and notarized release build needs a Developer ID Application certificate and a `notarytool` profile:
+A signed and notarized release uses RainnWorks signing through
+[`rw-apple`](https://github.com/RainnWorks/apple-signing):
 
 ```sh
-xcrun notarytool store-credentials pinch-notary
-IDENTITY="Developer ID Application: <name> (<team id>)" ./release.sh
+./release.sh
+gh release create v$(cat VERSION) dist/Pinch-$(cat VERSION).zip
 ```
-
-The zip lands in `dist/`.
