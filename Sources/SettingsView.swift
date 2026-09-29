@@ -1,9 +1,16 @@
 import ServiceManagement
 import SwiftUI
 
+let hidesDockIconKey = "hidesDockIcon"
+
+func applyDockIconSetting(hidden: Bool) {
+    NSApp.setActivationPolicy(hidden ? .accessory : .regular)
+}
+
 struct SettingsView: View {
     @ObservedObject var store: BindingStore
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
+    @AppStorage(hidesDockIconKey) private var hidesDockIcon = false
 
     var body: some View {
         Form {
@@ -15,6 +22,11 @@ struct SettingsView: View {
                         } catch {
                             opensAtLogin = SMAppService.mainApp.status == .enabled
                         }
+                    }
+                Toggle("Hide from Dock", isOn: $hidesDockIcon)
+                    .onChange(of: hidesDockIcon) { _, hidden in
+                        applyDockIconSetting(hidden: hidden)
+                        NSApp.activate()
                     }
             }
             ForEach(Press.allCases) { press in
